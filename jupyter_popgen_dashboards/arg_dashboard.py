@@ -32,7 +32,7 @@ import pandas as pd
 import networkx as nx
 
 import arg
-from arg import Coalescent, Recombination, interval_sum, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg
+from arg import Coalescent, Recombination, interval_sum, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg, traverse_marginal, marginal_trees
 
 
 
@@ -246,7 +246,7 @@ layout = html.Div(
                                                     figure={'layout': {
                                                             # 'title': 'Marginal tree',
                                                             'height': 250,
-                                                            # 'margin': {'l': 0, 'b': 0, 't': 0, 'r': 0},
+                                                            # 'margin': {'l': 10, 'b': 0, 't': 0, 'r': 0},
                                                                 }
                                                             },),
                                     ], className='pretty_container'
@@ -442,6 +442,85 @@ def arg_figure_data(nodes):
                 )
 
 
+def tree_figure_data(node_lists):
+
+    traces = []
+
+    edge_x = []
+    edge_y = [] 
+    node_x = []
+    node_y = []    
+    node_color = []
+
+    for i, nodes in enumerate(node_lists):
+
+        # for lineage in get_parent_lineages(nodes, root=False):
+        for lineage in get_child_lineages(nodes):
+            # start
+            edge_x.append(lineage.down.xpos)
+            edge_y.append(lineage.down.height)
+            # end
+            edge_x.append(lineage.up.xpos)
+            edge_y.append(lineage.up.height)
+            # gap
+            edge_x.append(None)
+            edge_y.append(None)
+
+        for node in nodes:
+            node_x.append(node.xpos)
+            node_y.append(node.height)
+
+            node_color.append(i/len(node_lists))
+
+    traces.append(dict(
+        x=edge_x,
+        y=edge_y,
+        mode='lines',
+        opacity=1,
+        hoverinfo = 'skip',
+        line={
+            'color': 'grey',
+        },
+        name=''
+    ))
+
+    traces.append(dict(
+        x=node_x,
+        y=node_y,
+        mode='markers',
+        opacity=1,
+        hoverinfo ='text',
+        marker={
+            'size': 7,
+            'color': node_color,
+            'cmin': 0,
+            'cmax': 1,
+            'colorscale': 'Rainbow',
+            'line': {'width': 0.3, 'color': 'white'},
+        },
+        name=''
+    ))
+
+    return dict(data=traces,
+                layout=dict(xaxis=dict(fixedrange=True, 
+                                       range=[-0.05, 1.05], #title='Samples',
+                                    #    showgrid=False, showline=False, 
+                                    #    zeroline=False, showticklabels=False
+                                       ),
+                            yaxis=dict(fixedrange=True, 
+                                       range=[-0.1, 1.1], #title='Time',
+                                    #    showgrid=False, showline=False, 
+                                    #    zeroline=False, showticklabels=False
+                                       ),
+                            hovermode='closest',
+                            range_color=[0,1],
+                            margin= {'l': 50, 'b': 20, 't': 20, 'r': 20},
+                            transition = {'duration': 0},
+                            showlegend=False
+                            )
+                )
+
+
 @app.callback(
     Output('arg-header', 'children'),
     [Input('new-arg-button', 'n_clicks')])
@@ -544,38 +623,63 @@ def update_arg_figure(jsonified_data, event, interval):
     else:
         new_nodes = []
 
-
     return arg_figure_data(new_nodes)
+
 
 @app.callback(
     Output('marginal-tree', 'figure'),
-    [Input('event-slider', 'value'),
-     Input('seq-slider', 'value'),
+    [Input('intermediate-value', 'children'),
      Input('arg-figure', 'hoverData')])
-def update_arg_tree_figure(node, interval, hover):
+def update_marg_tree_figure(jsonified_data, hover):
 
-#    print(node, interval, hover)
-    if hover is None:
-        color='blue'
+    # EVEN COOLER: THE ANCESTRAL SEQUENCES PANEL COULD SHOW EACH INTERVAL (between brakpoints)
+    # OF THE FOCUS NODE AS COLORED BARS REPRESENTING ANCESTRAL SEQUENCE (and non-ancestral as gray)
+    # AND THEN THE TREE PANEL COULD SHOW THE CORRESPONDING MARGINAL TREES IN THE SAME COLORS.
+    # FOR COALESCENCE THAT SHOULD SHOW INTERVALS FOR THE PARENT LINEAGE
+    # FOR RECOMBINATION IT SHOULD LSHOW INTERVALS FOR THE CHILD LINEAGE
+
+    marg_tree_list = []
+    if hover and jsonified_data:
+        nodes = arg.json2arg(jsonified_data)
+        focus_node_idx = hover['points'][0]['pointIndex']
+        focus_node = nodes[focus_node_idx]
+
+        if type(focus_node) is Recombination:
+            intervals = focus_node.child.intervals
+        else:
+            intervals = focus_node.parent.intervals
+
+        for interval in intervals:
+            # get marginal arg under focus node
+            new_nodes = traverse_marginal(focus_node, interval)
+
+            new_nodes = list(new_nodes)
+            new_nodes.sort(key=lambda x: x.height)
+            # new_nodes = sorted(new_nodes, key=lambda x: int(repr(x)))
+
+            marg_trees = marginal_trees(new_nodes)
+            marg_tree_list.extend(marg_trees)
+
+        nr_cols = len(marg_tree_list)
+
+        # TODO: make rows and cols, and make sure maginal trees has same aspect ratio, and that the same nodes are placed at same height in each tree.
+        for i in range(nr_cols):
+            tree = marg_tree_list[i]
+            if tree:
+                rescale_positions(tree)
+            for node in tree:
+                # TODO: add some space between trees
+                node.xpos = node.xpos/nr_cols + i/nr_cols
+            marg_tree_list[i] = tree
+
+    # TODO: Keep "dangling root" branch here
+
+    if marg_tree_list:
+        return(tree_figure_data(marg_tree_list))
+        # return(arg_figure_data([x for sublist in marg_tree_list for x in sublist]))
     else:
-        color='red'#hover['points'][0]['x']
-    return dict(data=[dict(x=[1,2,3], 
-                            y=[1,2,3], 
-                            mode='markers', 
-                            marker={'color': color})],
-                layout=dict(xaxis=dict(range=[0, 4], #title='Samples',
-                                       showgrid=False, showline=False, 
-                                       zeroline=False, showticklabels=False
-                                       ),
-                            yaxis=dict(range=[0, 4], #title='Time',
-                                       showgrid=False, showline=False, 
-                                       zeroline=False, showticklabels=False
-                                       ),
-                            hovermode='closest',
-                            margin= {'l': 0, 'b': 0, 't': 20, 'r': 0},
-                            transition = {'duration': 0},
-                            showlegend=False
-                            ))
+        return(tree_figure_data([]))
+
 
 @app.callback(
     Output('ancestral-sequence', 'figure'),

@@ -10,7 +10,7 @@ import random
 
 from random import random, shuffle, choices
 from functools import partial
-from copy import deepcopy
+from copy import deepcopy, copy
 import networkx as nx
 from functools import reduce
 from numpy.random import exponential
@@ -34,7 +34,7 @@ class Lineage(object):
         return self.lineageid
 
     def __eq__(self, other):
-        return self.lineageid == other.lineageid  
+        return hasattr(other, 'lineageid') and self.lineageid == other.lineageid  
 
     def __repr__(self):
         return f'{self.lineageid}:{self.intervals}'
@@ -49,7 +49,19 @@ class Lineage(object):
     def toJSON(self):
         return json.dumps(self, default=self.get_dict, sort_keys=True, indent=4)
 
-
+    def __deepcopy__(self, memo):
+        if self in memo:
+            return memo.get(self)
+        dup = type(self)(
+            lineageid=deepcopy(self.lineageid, memo),
+            # down=deepcopy(self.down, memo),
+            # up=deepcopy(self.up, memo),
+            intervals=deepcopy(self.intervals, memo)
+            )
+        memo[self] = dup
+        dup.down=deepcopy(self.down, memo)
+        dup.up=deepcopy(self.up, memo)
+        return dup
 
 class Node():
     """
@@ -59,7 +71,7 @@ class Node():
         return self.nodeid
 
     def __eq__(self, other):
-        return self.nodeid == other.nodeid  
+        return hasattr(other, 'nodeid') and self.nodeid == other.nodeid  
 
     def __repr__(self):
         return f'{self.nodeid}'
@@ -81,6 +93,20 @@ class Leaf(Node):
     def toJSON(self):
         return json.dumps(self, default=self.get_dict, sort_keys=True, indent=4)
 
+    def __deepcopy__(self, memo):
+        if self in memo:
+            return memo.get(self)
+        dup = type(self)(
+            nodeid=deepcopy(self.nodeid, memo),
+            height=deepcopy(self.height, memo),
+            # parent=deepcopy(self.parent, memo),
+            intervals=deepcopy(self.intervals, memo),
+            xpos=deepcopy(self.xpos, memo)
+            )
+        memo[self] = dup
+        dup.parent = deepcopy(self.parent, memo)
+        return dup            
+
 class Coalescent(Node):
 
     def __init__(self, nodeid=None, height=None, children=None, parent=None, xpos=None):
@@ -98,6 +124,21 @@ class Coalescent(Node):
 
     def toJSON(self):
         return json.dumps(self, default=self.get_dict, sort_keys=True, indent=4)
+
+    def __deepcopy__(self, memo):
+        if self in memo:
+            return memo.get(self)
+        dup = type(self)(
+            nodeid=deepcopy(self.nodeid, memo),
+            height=deepcopy(self.height, memo),
+            # children=deepcopy(self.children, memo),
+            # parent=deepcopy(self.parent, memo),
+            xpos=deepcopy(self.xpos, memo)
+            )
+        memo[self] = dup
+        dup.children=[deepcopy(c, memo) for c in self.children]
+        dup.parent=deepcopy(self.parent, memo)
+        return dup            
 
 class Recombination(Node):
 
@@ -119,6 +160,24 @@ class Recombination(Node):
 
     def toJSON(self):
         return json.dumps(self, default=self.get_dict, sort_keys=True, indent=4)
+
+    def __deepcopy__(self, memo):
+        if self in memo:
+            return memo.get(self)
+        dup = type(self)(
+            nodeid=deepcopy(self.nodeid, memo),
+            height=deepcopy(self.height, memo),
+            # child=deepcopy(self.child, memo),
+            recomb_point=deepcopy(self.recomb_point, memo),
+            # left_parent=deepcopy(self.left_parent, memo),
+            # right_parent=deepcopy(self.right_parent, memo),
+            xpos=deepcopy(self.xpos, memo)
+            )  
+        memo[self] = dup
+        dup.child=deepcopy(self.child, memo)
+        dup.left_parent=deepcopy(self.left_parent, memo)
+        dup.right_parent=deepcopy(self.right_parent, memo)
+        return dup                  
 
 def flatten(list_of_tps):
  
@@ -424,30 +483,59 @@ def get_child_lineages(nodes):
 
     return lineages
 
-def traverse_marginal(node, interval):
+# def traverse_marginal(node, interval):
+#     """
+#     Recursive function for getting marginal tree/ARG
+#     """    
+#     node = deepcopy(node) # TODO: remove if input is a cloned arg.
+#     tree_nodes = set()
+#     if type(node) is Leaf:
+#         tree_nodes.add(node)
+#     if type(node) is Recombination:
+#         if interval_intersect([interval], node.child.intervals):
+#             tree_nodes.add(node)
+#             tree_nodes.update(traverse_marginal(node.child.down, interval))
+#     elif type(node) is Coalescent:
+#         if node.parent is None or interval_intersect([interval], node.parent.intervals):
+#             tree_nodes.add(node)
+#         del_child = None
+#         for i, child in enumerate(node.children):
+#             if interval_intersect([interval], child.intervals):
+#                 tree_nodes.update(traverse_marginal(child.down, interval))
+#             else:
+#                 del_child = i
+#         if del_child is not None:
+#             del node.children[del_child]
+#     return tree_nodes
+
+def _traverse_marginal(node, interval):
     """
     Recursive function for getting marginal tree/ARG
     """    
-    node = deepcopy(node)
     tree_nodes = set()
     if type(node) is Leaf:
         tree_nodes.add(node)
     if type(node) is Recombination:
         if interval_intersect([interval], node.child.intervals):
             tree_nodes.add(node)
-            tree_nodes.update(traverse_marginal(node.child.down, interval))
+            tree_nodes.update(_traverse_marginal(node.child.down, interval))
     elif type(node) is Coalescent:
         if node.parent is None or interval_intersect([interval], node.parent.intervals):
             tree_nodes.add(node)
         del_child = None
         for i, child in enumerate(node.children):
             if interval_intersect([interval], child.intervals):
-                tree_nodes.update(traverse_marginal(child.down, interval))
+                tree_nodes.update(_traverse_marginal(child.down, interval))
             else:
                 del_child = i
         if del_child is not None:
             del node.children[del_child]
-    return tree_nodes
+    return tree_nodes       
+
+def traverse_marginal(node, interval):
+    clone = deepcopy(node) # TODO: remove if input is a cloned arg.
+    return _traverse_marginal(clone, interval)
+
 
 def remove_dangling_root(tree_nodes):
     """
@@ -465,7 +553,11 @@ def remove_dangling_root(tree_nodes):
 def marginal_arg(nodes, interval):
     """
     Gets the marginal ARG given a sequene interval
-    """    
+    """
+
+    # TODO: 
+    # nodes = clone_arg(nodes)
+
     # get nodes for marginal
     marg_nodes = traverse_marginal(nodes[-1], list(interval))
 
@@ -599,6 +691,11 @@ if __name__ == '__main__':
     # get arg and add positions
     nodes = get_arg_nodes()
 
+    print(nodes)
+
+    print(deepcopy(nodes))
+
+    sys.exit()
 
     json_str = arg2json(nodes)
 
@@ -612,9 +709,11 @@ if __name__ == '__main__':
 
     # get breakpoints
     breakpoints = get_breakpoints(nodes)
+    print(breakpoints)
 
     # get marginal trees
     trees = marginal_trees(nodes)
+    print(trees)
 
     # marginal arg for some consequtive intervals
     marg_arg = marginal_arg(nodes, [0, breakpoints[1]])
