@@ -504,13 +504,13 @@ def tree_figure_data(node_lists):
     return dict(data=traces,
                 layout=dict(xaxis=dict(fixedrange=True, 
                                        range=[-0.05, 1.05], #title='Samples',
-                                    #    showgrid=False, showline=False, 
-                                    #    zeroline=False, showticklabels=False
+                                       showgrid=False, showline=False, 
+                                       zeroline=False, showticklabels=False
                                        ),
                             yaxis=dict(fixedrange=True, 
                                        range=[-0.1, 1.1], #title='Time',
-                                    #    showgrid=False, showline=False, 
-                                    #    zeroline=False, showticklabels=False
+                                       showgrid=False, showline=False, 
+                                       zeroline=False, showticklabels=False
                                        ),
                             hovermode='closest',
                             range_color=[0,1],
@@ -663,13 +663,24 @@ def update_marg_tree_figure(jsonified_data, hover):
         nr_cols = len(marg_tree_list)
 
         # TODO: make rows and cols, and make sure maginal trees has same aspect ratio, and that the same nodes are placed at same height in each tree.
+        space = 0.5
+        
+    
+#         heights = set()
+#         for tree in marg_tree_list:
+#             if tree:
+#                 heights.add(tree[-1].height)
+#         same_height = len(heights) <= 1
+        
         for i in range(nr_cols):
             tree = marg_tree_list[i]
-            if tree:
-                rescale_positions(tree)
+#             if tree and same_height:
+#                 rescale_positions(tree)
+            if not tree:
+                print('Empty tree...')
             for node in tree:
                 # TODO: add some space between trees
-                node.xpos = node.xpos/nr_cols + i/nr_cols
+                node.xpos = node.xpos/(nr_cols+(nr_cols-1)*space) + i/nr_cols
             marg_tree_list[i] = tree
 
     # TODO: Keep "dangling root" branch here
@@ -680,60 +691,152 @@ def update_marg_tree_figure(jsonified_data, hover):
     else:
         return(tree_figure_data([]))
 
+import plotly.colors
+
+def get_continuous_color(colorscale, intermed):
+    """
+    Plotly continuous colorscales assign colors to the range [0, 1]. This function computes the intermediate
+    color for any value in that range.
+
+    Plotly doesn't make the colorscales directly accessible in a common format.
+    Some are ready to use:
+    
+        colorscale = plotly.colors.PLOTLY_SCALES["Greens"]
+
+    Others are just swatches that need to be constructed into a colorscale:
+
+        viridis_colors, scale = plotly.colors.convert_colors_to_same_type(plotly.colors.sequential.Viridis)
+        colorscale = plotly.colors.make_colorscale(viridis_colors, scale=scale)
+
+    :param colorscale: A plotly continuous colorscale defined with RGB string colors.
+    :param intermed: value in the range [0, 1]
+    :return: color in rgb string format
+    :rtype: str
+    """
+    if len(colorscale) < 1:
+        raise ValueError("colorscale must have at least one color")
+
+    if intermed <= 0 or len(colorscale) == 1:
+        return colorscale[0][1]
+    if intermed >= 1:
+        return colorscale[-1][1]
+
+    for cutoff, color in colorscale:
+        if intermed > cutoff:
+            low_cutoff, low_color = cutoff, color
+        else:
+            high_cutoff, high_color = cutoff, color
+            break
+
+    # noinspection PyUnboundLocalVariable
+    return plotly.colors.find_intermediate_color(
+        lowcolor=low_color, highcolor=high_color,
+        intermed=((intermed - low_cutoff) / (high_cutoff - low_cutoff)),
+        colortype="rgb")
 
 @app.callback(
     Output('ancestral-sequence', 'figure'),
-    [Input('event-slider', 'value'),
-     Input('seq-slider', 'value'),
-     Input('arg-figure', 'hoverData')])
-def update_ancestral_seq_figure(node, interval, hover):
-    # print(node, interval, hover)
-    if hover is None:
-        color='blue'
-    else:
-        color='red'#hover['points'][0]['x']
-    return dict(data=[dict(x=[1,2,3], 
-                            y=[1,2,3], 
-                            mode='markers', 
-                            marker={'color': color})],
-                layout=dict(xaxis=dict(range=[0, 4], #title='Samples',
-                                       showgrid=False, showline=False, 
-                                       zeroline=False, showticklabels=False
-                                       ),
-                            yaxis=dict(range=[0, 4], #title='Time',
-                                       showgrid=False, showline=False, 
-                                       zeroline=False, showticklabels=False
-                                       ),
-                            hovermode='closest',
-                            margin= {'l': 0, 'b': 0, 't': 20, 'r': 0},
-                            transition = {'duration': 0},
-                            showlegend=False
-                            ))
+    [Input('intermediate-value', 'children'),
+     Input('arg-figure', 'hoverData')])    
+def update_ancestral_seq_figure(jsonified_data, hover):
 
+    figure_data = dict(
+                    layout=dict(xaxis=dict(fixedrange=True,
+                                           range=[-0.01, 1.01], #title='Samples',
+                                           showgrid=False, showline=False, 
+                                           zeroline=False, showticklabels=False
+                                           ),
+                               yaxis=dict(fixedrange=True,
+                                           range=[0, 1], #title='Time',
+                                           showgrid=False, showline=False, 
+                                           zeroline=False, showticklabels=False
+                                           ),
+                               hovermode='closest',
+                               margin= {'l': 0, 'b': 0, 't': 20, 'r': 0},
+                               transition = {'duration': 0},
+                               showlegend=False,
+                               shapes=[],
+                               )
+                    )
+    
+    if hover and jsonified_data:
+        nodes = arg.json2arg(jsonified_data)
+        focus_node_idx = hover['points'][0]['pointIndex']
+        focus_node = nodes[focus_node_idx]
 
+        if type(focus_node) is Recombination:
+            intervals = focus_node.child.intervals
+        else:
+            intervals = focus_node.parent.intervals
+        
+        segments = list()
+        for interval in intervals:        
 
-            # html.Div([
-            #     dcc.Markdown(d("""
-            #         **Hover Data**
-            #         Mouse over values in the graph.
-            #     """)),
-            #     html.Pre(id='hover-data', style={
-            #                                     'border': 'thin lightgrey solid',
-            #                                     'overflowX': 'scroll',
-            #                                     'height': 470,
-            #                                     })
-            # ], className='four columns'),
-            # html.Div([
-            #     dcc.Markdown(d("""
-            #         **Click Data**
-            #         Click values in the graph.
-            #     """)),
-            #     html.Pre(id='click-data', style={
-            #                                     'border': 'thin lightgrey solid',
-            #                                     'overflowX': 'scroll',
-            #                                     'height': 470,
-            #                                     })
-            # ], className='four columns'),  
+            new_nodes = traverse_marginal(focus_node, interval)
+            new_nodes = list(new_nodes)
+            new_nodes.sort(key=lambda x: x.height)
+
+            breakpoints = get_breakpoints(new_nodes)
+            starts = sorted(set([interval[0]] + breakpoints))
+            ends = sorted(set([interval[1]] + breakpoints))
+
+            segments.extend(list(zip(starts, ends)))
+
+        colors, _ = plotly.colors.convert_colors_to_same_type(plotly.colors.sequential.Rainbow)
+        colorscale = plotly.colors.make_colorscale(colors)
+
+        shape = dict(type='rect', xref='x', yref='y', fillcolor=None, line= {'width': 1},
+                    x0=0/3, y0=0.5, x1=1/3, y1=0.6)
+        figure_data['layout']['shapes'].append(shape)
+            
+        for i, segment in enumerate(segments):
+        
+            # Add the shapes you need...
+            color=get_continuous_color(colorscale, intermed=i/len(segments))
+
+            offset = 0
+            shape = dict(type='rect', xref='x', yref='y', fillcolor= color, line= {'width': 1},
+                        x0=segment[0]/3, y0=0.5, x1=segment[1]/3, y1=0.6)
+            figure_data['layout']['shapes'].append(shape)
+
+    return figure_data
+    
+# @app.callback(
+#     Output('ancestral-sequence', 'figure'),
+#     [Input('event-slider', 'value'),
+#      Input('seq-slider', 'value'),
+#      Input('arg-figure', 'hoverData')])
+# def update_ancestral_seq_figure(node, interval, hover):
+#     figure_data = dict(
+#                         layout=dict(xaxis=dict(fixedrange=True,
+#                                                range=[0, 1], #title='Samples',
+#                                                showgrid=False, showline=False, 
+#                                                zeroline=False, showticklabels=False
+#                                                ),
+#                                    yaxis=dict(fixedrange=True,
+#                                                range=[0, 1], #title='Time',
+#                                                showgrid=False, showline=False, 
+#                                                zeroline=False, showticklabels=False
+#                                                ),
+#                                    hovermode='closest',
+#                                    margin= {'l': 0, 'b': 0, 't': 20, 'r': 0},
+#                                    transition = {'duration': 0},
+#                                    showlegend=False,
+#                                    shapes=[],
+#                                    )
+#                         )
+#     if hover is None:
+#         return figure_data
+#     else:
+#         for i in range(1):
+            
+#             # Add the shapes you need...
+#             color='blue'
+            
+#             shape = dict(type='rect', xref='x', yref='y', fillcolor= color, line= {'width': 0},
+#                         x0=0.2, y0=0.2, x1=0.6, y1=0.6)
+#             figure_data['layout']['shapes'].append(shape)
+#         return figure_data
 
 
 # @app.callback(

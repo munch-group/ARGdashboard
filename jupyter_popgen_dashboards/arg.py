@@ -7,6 +7,7 @@ import json
 import random
 # print("Setting random seed")
 # random.seed(3)
+# numpy.random.seed(3)
 
 from random import random, shuffle, choices
 from functools import partial
