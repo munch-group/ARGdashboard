@@ -1,7 +1,9 @@
 name: dashboard
 channels:
   - defaults
+  - conda-forge
   - bioconda
+  - plotly
 dependencies:
   - pandas
   - networkx

@@ -1,0 +1,142 @@
+
+        """ from copy import deepcopy, copy
+
+        def clone_arg(nodes):
+            # copy lineages and nodes
+            new_nodes = [copy(node) for node in nodes]
+            new_lineages = [copy(lineage) for lineage in get_child_lineages(nodes)]
+
+            # connect nodes to lineages
+            lineage_ids = [l.lineageid for l in new_lineages]
+            for new_node in new_nodes:
+                if type(new_node) is Recombination:
+                    new_node.child = new_lineages[lineage_ids.index(new_node.child.lineageid)]
+
+                    try:
+                        new_node.left_parent = new_lineages[lineage_ids.index(new_node.left_parent.lineageid)]
+                    except ValueError:
+                        new_node.left_parent = None
+                    try:
+                        new_node.right_parent = new_lineages[lineage_ids.index(new_node.right_parent.lineageid)]
+                    except ValueError:
+                        new_node.right_parent = None                        
+
+                elif type(new_node) is Coalescent:
+                    print(new_lineages, new_node.children)
+                    new_node.children = [
+                        new_lineages[lineage_ids.index(new_node.children[0].lineageid)],
+                        new_lineages[lineage_ids.index(new_node.children[1].lineageid)]
+                    ]
+                    new_node.parent = new_lineages[lineage_ids.index(new_node.parent.lineageid)]
+                else:
+                    new_node.parent = new_lineages[lineage_ids.index(new_node.parent.lineageid)]
+
+            # connect lineages to nodes
+            node_ids = [n.nodeid for n in new_nodes]
+            for new_lineage in new_lineages:
+                new_lineage.up = new_nodes[node_ids.index(new_lineage.up.nodeid)]
+                new_lineage.down = new_nodes[node_ids.index(new_lineage.up.nodeid)]
+            
+            return new_nodes
+
+
+            new_nodes = list()
+            for node in nodes:
+                new_node = deepcopy(node)
+                if type(node) is Recombination:
+                    new_node.left_parent = deepcopy(node.left_parent)
+                    new_node.left_parent.down = new_node
+                    new_node.right_parent = deepcopy(node.right_parent)
+                    new_node.right_parent.down = new_node
+                else:
+                    new_node.parent = deepcopy(node.parent)
+                    new_node.parent.down = new_node
+                new_nodes.append(new_node)
+            return new_nodes"""
+
+
+
+
+# def _traverse_marginal(node, interval):
+#     """
+#     Recursive function for getting marginal tree/ARG
+#     """    
+#     node = copy(node) # TODO: should be implemented in __copy__ (copy node and child lineages)
+#     # OR: WE COULD AVOID COPYING ANY LINEAGES AND JUST ADD THEM AFTER...
+#     tree_nodes = set()
+#     tree_edges = set()
+#     if type(node) is Leaf:
+#         tree_nodes.add(node)
+#     if type(node) is Recombination:
+#         if interval_intersect([interval], node.child.intervals):
+#             tree_nodes.add(node)
+#             tree_edges.add((node.child.up, node.child.down))
+#             descendant_nodes, descendant_edges = _traverse_marginal(node.child.down, interval)
+#             tree_nodes.update(descendant_nodes)
+#             tree_edges.update(descendant_edges)
+#     elif type(node) is Coalescent:
+#         if node.parent is None or interval_intersect([interval], node.parent.intervals):
+#             tree_nodes.add(node)
+#         del_child = None
+#         for i, child in enumerate(node.children):
+#             if interval_intersect([interval], child.intervals):
+#                 tree_edges.add((child.up, child.down))
+#                 descendant_nodes, descendant_edges = _traverse_marginal(child.down, interval)
+#                 tree_nodes.update(descendant_nodes)
+#                 tree_edges.update(descendant_edges)
+#             else:
+#                 del_child = i
+#         if del_child is not None:
+#             del node.children[del_child]            
+#     return tree_nodes, tree_edges
+
+# def traverse_marginal(node, interval):
+#     tree_nodes, tree_edges = _traverse_marginal(node, interval)
+
+    # for up, down in tree_edges:
+    #     # add lineage linking up to down (both node and lineage side)
+
+    # return tree_nodes            
+
+
+
+
+# def clone_arg(nodes):
+#     # copy nodes
+#     new_nodes = [copy(node) for node in nodes] 
+
+#     # copy lineages
+#     new_lineages = [copy(lineage) for lineage in get_child_lineages(nodes)]
+
+#     # # connect nodes to lineages
+#     # lineage_ids = [l.lineageid for l in new_lineages]
+#     # for new_node in new_nodes:
+#     #     if type(new_node) is Recombination:
+#     #         new_node.child = new_lineages[lineage_ids.index(new_node.child.lineageid)]
+
+#     #         try:
+#     #             new_node.left_parent = new_lineages[lineage_ids.index(new_node.left_parent.lineageid)]
+#     #         except ValueError:
+#     #             new_node.left_parent = None
+#     #         try:
+#     #             new_node.right_parent = new_lineages[lineage_ids.index(new_node.right_parent.lineageid)]
+#     #         except ValueError:
+#     #             new_node.right_parent = None                        
+
+#     #     elif type(new_node) is Coalescent:
+#     #         children = list()
+#     #         for child in new_node.children:
+#     #             if child.lineageid in lineage_ids:
+#     #                 children.append(new_lineages[lineage_ids.index(new_node.children[0].lineageid)])
+#     #         new_node.children = children
+#     #         new_node.parent = new_lineages[lineage_ids.index(new_node.parent.lineageid)]
+#     #     else:
+#     #         new_node.parent = new_lineages[lineage_ids.index(new_node.parent.lineageid)]
+
+#     # connect lineages to nodes
+#     node_ids = [n.nodeid for n in new_nodes]
+#     for new_lineage in new_lineages:
+#         new_lineage.up = new_nodes[node_ids.index(new_lineage.up.nodeid)]
+#         new_lineage.down = new_nodes[node_ids.index(new_lineage.up.nodeid)]
+    
+#     return new_nodes

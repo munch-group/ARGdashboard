@@ -438,6 +438,7 @@ def get_breakpoints(nodes):
     breakpoints = list()
     for n in nodes:
         if type(n) is Recombination:
+#        if type(n) is Recombination and all(p.up in nodes for p in n.parents):
             breakpoints.append(n.recomb_point)
     return sorted(breakpoints)
 
@@ -551,7 +552,7 @@ def remove_dangling_root(tree_nodes):
     for i in for_del:
         del tree_nodes[i]
 
-def marginal_arg(nodes, interval):
+def marginal_arg(nodes, interval, strip_dangling_root=True):
     """
     Gets the marginal ARG given a sequene interval
     """
@@ -568,22 +569,33 @@ def marginal_arg(nodes, interval):
     # sort on height
     marg_nodes.sort(key=lambda x: x.height)
     # prune top path above last coalescence
-    remove_dangling_root(marg_nodes)
+    if strip_dangling_root:
+        remove_dangling_root(marg_nodes)
 
     return marg_nodes
 
-def marginal_trees(nodes):
+def marginal_trees(nodes, interval, strip_dangling_root=False):
     """
     Gets list of marginal trees
     """
     tree_list = list()
     breakpoints = get_breakpoints(nodes)
-    borders = [0] + breakpoints + [1]
-    for interval in zip(borders[:-1], borders[1:]):
-        marg_nodes = marginal_arg(nodes, interval)
 
-        tree_list.append(marg_nodes)
-    return tree_list
+    borders = [0] + breakpoints + [1]
+    
+    # for interval in zip(borders[:-1], borders[1:]):
+    #     marg_nodes = marginal_arg(nodes, interval)
+    #     tree_list.append(marg_nodes)
+    # return tree_list
+
+    interval_list = list()
+    for interv in zip(borders[:-1], borders[1:]):
+        marg_nodes = marginal_arg(nodes, interv, strip_dangling_root=strip_dangling_root)
+        # TODO: make this correct:...
+        if marg_nodes and interv[1] > interval[0] and interval[1] > interv[0]:
+            tree_list.append(marg_nodes)
+            interval_list.append(interv)
+    return tree_list, interval_list
 
 def draw_graph(nodes):
     """
