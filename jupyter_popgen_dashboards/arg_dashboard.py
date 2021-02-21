@@ -697,8 +697,9 @@ def update_marg_tree_figure(jsonified_data, hover, slider_interval):
 @app.callback(
     Output('ancestral-sequence', 'figure'),
     [Input('intermediate-value', 'children'),
-     Input('arg-figure', 'hoverData')])    
-def update_ancestral_seq_figure(jsonified_data, hover):
+     Input('arg-figure', 'hoverData'),
+     Input('seq-slider', 'value')])    
+def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 
     traces = []
     shape_list = []
@@ -707,6 +708,9 @@ def update_ancestral_seq_figure(jsonified_data, hover):
         nodes = arg.json2arg(jsonified_data)
         focus_node_idx = hover['points'][0]['pointIndex']
         focus_node = nodes[focus_node_idx]
+
+        # slider interval is 0-1000 not 0-1:
+        slider_interval = [x/1000 for x in slider_interval]
 
         def get_segments(focus_node, intervals):
             segments = list()
@@ -749,6 +753,11 @@ def update_ancestral_seq_figure(jsonified_data, hover):
             segments2 = get_segments(focus_node, focus_node.right_parent.intervals)
             segments3 = get_segments(focus_node, focus_node.child.intervals)
 
+            # get part of intervals that intersect slider interval:
+            segments1 = list(map(tuple, interval_intersect([slider_interval], segments1)))
+            segments2 = list(map(tuple, interval_intersect([slider_interval], segments2)))
+            segments3 = list(map(tuple, interval_intersect([slider_interval], segments3)))
+
             unique_segments = sorted(set().union(segments1, segments2, segments3))
             color_map = dict()
             colors, _ = plotly.colors.convert_colors_to_same_type(plotly.colors.sequential.Rainbow)
@@ -772,6 +781,11 @@ def update_ancestral_seq_figure(jsonified_data, hover):
             segments2 = get_segments(focus_node, focus_node.children[1].intervals)
             segments3 = get_segments(focus_node, focus_node.parent.intervals)
 
+            # get part of intervals that intersect slider interval:
+            segments1 = list(map(tuple, interval_intersect([slider_interval], segments1)))
+            segments2 = list(map(tuple, interval_intersect([slider_interval], segments2)))
+            segments3 = list(map(tuple, interval_intersect([slider_interval], segments3)))
+            
             unique_segments = sorted(set().union(segments1, segments2, segments3))
             color_map = dict()
             colors, _ = plotly.colors.convert_colors_to_same_type(plotly.colors.sequential.Rainbow)
