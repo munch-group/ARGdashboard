@@ -31,7 +31,7 @@ import pandas as pd
 import networkx as nx
 
 import arg
-from arg import Coalescent, Recombination, Leaf, interval_sum, interval_intersect, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg, traverse_marginal, marginal_trees
+from arg import Coalescent, Recombination, Leaf, interval_sum, interval_diff, interval_intersect, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg, traverse_marginal, marginal_trees
 
 import plotly.colors
 
@@ -712,6 +712,8 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
         # slider interval is 0-1000 not 0-1:
         slider_interval = [x/1000 for x in slider_interval]
 
+        gray_segments = list(map(tuple, interval_diff([[0, 1]], [slider_interval])))
+
         def get_segments(focus_node, intervals):
             segments = list()
             marg_tree_list = list()
@@ -725,15 +727,18 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
                 segments.extend(marg_segm)
             return segments
 
-        def get_shapes(segments, x, y, color_map):
+        def get_shapes(segments, gray_segments, x, y, color_map):
             shape_list = list()
             shape = dict(type='rect', xref='x', yref='y', fillcolor=None, line= {'width': 1},
                         x0=x, y0=y, x1=x+2/5, y1=y+0.1)
             shape_list.append(shape)                
             for i, segment in enumerate(segments):
-                # color=get_continuous_color(colorscale, intermed=i/len(segments))
                 color=color_map[segment]
                 shape = dict(type='rect', xref='x', yref='y', fillcolor=color, line= {'width': 1},
+                            x0=x+segment[0]*2/5, y0=y, x1=x+segment[1]*2/5, y1=y+0.1)
+                shape_list.append(shape)
+            for i, segment in enumerate(gray_segments):
+                shape = dict(type='rect', xref='x', yref='y', fillcolor='lightgray', line= {'width': 1},
                             x0=x+segment[0]*2/5, y0=y, x1=x+segment[1]*2/5, y1=y+0.1)
                 shape_list.append(shape)
             return shape_list
@@ -746,9 +751,13 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 
             shape_list = [dict(type='rect', xref='x', yref='y', fillcolor=color, line= {'width': 1},
                 x0=1.5/5, y0=0.25, x1=3.5/5, y1=0.35)]
+            for segment in gray_segments:
+                shape = dict(type='rect', xref='x', yref='y', fillcolor='lightgray', line= {'width': 1},
+                            x0=1.5/5+segment[0]*2/5, y0=0.25, x1=1.5/5+segment[1]*2/5, y1=0.35)
+                shape_list.append(shape)                
 
         elif type(focus_node) is Recombination:
-            print("###", focus_node.left_parent.intervals, focus_node.right_parent.intervals)
+            # print("###", focus_node.left_parent.intervals, focus_node.right_parent.intervals)
             segments1 = get_segments(focus_node, focus_node.left_parent.intervals)
             segments2 = get_segments(focus_node, focus_node.right_parent.intervals)
             segments3 = get_segments(focus_node, focus_node.child.intervals)
@@ -766,15 +775,19 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
                 color_map[s] = get_continuous_color(colorscale, intermed=i/len(unique_segments))
 
             shape_list = \
-                get_shapes(segments1, x=0, y=0.75, color_map=color_map) + \
-                get_shapes(segments2, x=3/5, y=0.75, color_map=color_map) + \
-                get_shapes(segments3, x=1.5/5, y=0.25, color_map=color_map) + \
+                get_shapes(segments1, gray_segments, x=0, y=0.75, color_map=color_map) + \
+                get_shapes(segments2, gray_segments, x=3/5, y=0.75, color_map=color_map) + \
+                get_shapes(segments3, gray_segments, x=1.5/5, y=0.25, color_map=color_map) + \
                    [dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
                             x0=0.5, y0=0.55, x1=0.5, y1=0.35),
                     dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
                             x0=0.5, y0=0.55, x1=1/5, y1=0.75),                            
                     dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
                             x0=0.5, y0=0.55, x1=4/5, y1=0.75)]
+
+            # print("slider", slider_interval)
+            # shape_list.append(dict(type='rect', xref='x', yref='y', fillcolor='grey', line= {'width': 1},
+            #             x0=slider_interval[0], y0=0.5, x1=slider_interval[1], y1=0.5+0.1))
                 
         else:
             segments1 = get_segments(focus_node, focus_node.children[0].intervals)
@@ -785,7 +798,7 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
             segments1 = list(map(tuple, interval_intersect([slider_interval], segments1)))
             segments2 = list(map(tuple, interval_intersect([slider_interval], segments2)))
             segments3 = list(map(tuple, interval_intersect([slider_interval], segments3)))
-            
+
             unique_segments = sorted(set().union(segments1, segments2, segments3))
             color_map = dict()
             colors, _ = plotly.colors.convert_colors_to_same_type(plotly.colors.sequential.Rainbow)
@@ -794,9 +807,9 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
                 color_map[s] = get_continuous_color(colorscale, intermed=i/len(unique_segments))
 
             shape_list = \
-                get_shapes(segments1, x=0, y=0.25, color_map=color_map) + \
-                get_shapes(segments2, x=3/5, y=0.25, color_map=color_map) + \
-                get_shapes(segments3, x=1.5/5, y=0.75, color_map=color_map) + \
+                get_shapes(segments1, gray_segments, x=0, y=0.25, color_map=color_map) + \
+                get_shapes(segments2, gray_segments, x=3/5, y=0.25, color_map=color_map) + \
+                get_shapes(segments3, gray_segments, x=1.5/5, y=0.75, color_map=color_map) + \
                     [dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
                             x0=0.5, y0=0.55, x1=0.5, y1=0.75),
                     dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},

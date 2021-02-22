@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='jupyter_popgen_dashboards',
-    version="0.1",
+    version="1.0",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
