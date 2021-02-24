@@ -9,20 +9,15 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 # SEARCH/REPLACE package_name WITH THE ACTUAL PACKAGE NAME BELOW:
 
 setuptools.setup(
-    name='jupyter_popgen_dashboards',
+    name='popgen_dashboards',
     version="1.0",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/kaspermunch/jupyter_popgen_dashboards',
+    url='https://github.com/kaspermunch/popgen_dashboards',
     packages=setuptools.find_packages(),
-    # scripts=['script.py', 'other_script.py'],
-    # entry_points = {
-    #     'console_scripts': ['commaneline_name=package_name.function_name',
-    #                         'other_commaneline_name=package_name.other_function_name']
-    # },
     python_requires='>=3.6',
     install_requires=[
         #   'numpy>=1.1',

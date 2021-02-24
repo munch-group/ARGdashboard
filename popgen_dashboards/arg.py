@@ -301,7 +301,10 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
     # because we use the sequence interval from 0 to 1
     r = r * L
 
-    assert simulation in ["arg", "smcprime"]#, "SMC"]
+    print('SIM:')
+
+
+    assert simulation in ["arg", "smcprime", "smc"]
 
     nodes = list()
     live = list() # live lineages
@@ -331,9 +334,18 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
 
             if simulation == "smcprime'":
                 # intervals must overlap or be adjacent:
-                while not (interval_union(live[a].intervals, live[b].intervals) \
+                while not (interval_intersect(live[a].intervals, live[b].intervals) \
                     or interval_any_shared_borders(live[a].intervals, live[b].intervals)):
                     a, b = choices(range(len(live)), k=2)
+            elif simulation == "smc":
+                # intervals must overlap:
+                while not interval_intersect(live[a].intervals, live[b].intervals):
+                    print('skipped', a, b)
+                    a, b = choices(range(len(live)), k=2)
+                print('used', a, b, interval_intersect(live[a].intervals, live[b].intervals))
+
+#                print('smc', a, b, sum(e-s for s, e in interval_intersect(live[a].intervals, live[b].intervals)))
+
             # elif simulation == "SMC":
             #     # intervals must overlap
             #     while not interval_intersect(live[a].intervals, live[b].intervals):
@@ -346,6 +358,7 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
             lin_a, lin_b = live.pop(), live.pop()
 
             intervals = interval_union(lin_a.intervals, lin_b.intervals)
+
             # new node
             node_c = Coalescent(nodeid=last_node+1, height=height, 
                         children=[lin_a, lin_b])

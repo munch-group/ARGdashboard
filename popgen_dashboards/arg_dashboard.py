@@ -175,7 +175,8 @@ layout = html.Div(
                                                             options=[
                                                                 {'label': "ARG", 'value': 'arg'},
                                                                 # {'label': "SMC", 'value': 'smc'},
-                                                                {'label': "SMC'", 'value': 'smcprime'}
+                                                                {'label': "SMC'", 'value': 'smcprime'},
+                                                                {'label': "SMC", 'value': 'smc'}
                                                             ],
                                                             value='arg', searchable=False, clearable=False
                                                         ),
