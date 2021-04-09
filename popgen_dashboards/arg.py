@@ -1,6 +1,6 @@
 
 from math import exp, log
-import networkx.algorithms.non_randomness
+#import networkx.algorithms.non_randomness
 
 import json
 
@@ -12,9 +12,9 @@ import random
 from random import random, shuffle, choices
 from functools import partial
 from copy import deepcopy, copy
-import networkx as nx
+# import networkx as nx
 from functools import reduce
-from numpy.random import exponential
+from numpy.random import exponential, sample
 import numpy as np
 from time import sleep
 import matplotlib.pyplot as plt
@@ -286,6 +286,160 @@ def x_positions_traverse(node, offset):
         for child in node.children:
             x_positions_traverse(child.down, offset)
 
+####################################################
+
+def segments_crossing(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+        return False
+    #    raise Exception('lines do not intersect')
+
+    d = (det(*line1), det(*line2))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+
+    # return x, y
+
+    return \
+        min(line1[0][0], line1[1][0]) < x < max(line1[0][0], line1[1][0]) and \
+        min(line2[0][0], line2[1][0]) < x < max(line2[0][0], line2[1][0]) and \
+        min(line1[0][1], line1[1][1]) < y < max(line1[0][1], line1[1][1]) and \
+        min(line2[0][1], line2[1][1]) < y < max(line2[0][1], line2[1][1])
+
+
+def crossing(a, b):
+    return segments_crossing(
+        ((a.down.xpos, a.down.height), (a.up.xpos, a.up.height)), 
+        ((b.down.xpos, b.down.height), (b.up.xpos, b.up.height))
+        )
+
+def get_all_crossing_pairs(lineages):
+    crossing_pairs = []
+    for i in range(len(lineages)):
+        for j in range(i+1, len(lineages)):
+            if crossing(lineages[i], lineages[j]):
+                crossing_pairs.append([i, j])
+    return crossing_pairs
+
+def reduce_crossovers(nodes):
+
+    lineages = get_parent_lineages(nodes)
+    lineages = [x for x in lineages if x.up is not None]
+    crossing_pairs = get_all_crossing_pairs(lineages)
+
+    for i, j in crossing_pairs:
+        # swap downs
+        lineages[i].down.xpos, lineages[j].down.xpos = lineages[j].down.xpos, lineages[i].down.xpos
+        new_crossing_pairs = get_all_crossing_pairs(lineages)
+        if not len(new_crossing_pairs) < len(crossing_pairs):
+            # swap downs back
+            lineages[i].down.xpos, lineages[j].down.xpos = lineages[j].down.xpos, lineages[i].down.xpos
+        else:
+            crossing_pairs = new_crossing_pairs
+
+        # swap ups
+        lineages[i].up.xpos, lineages[j].up.xpos = lineages[j].up.xpos, lineages[i].up.xpos
+        new_crossing_pairs = get_all_crossing_pairs(lineages)
+        if not len(new_crossing_pairs) < len(crossing_pairs):
+            # swap ups back
+            lineages[i].up.xpos, lineages[j].up.xpos = lineages[j].up.xpos, lineages[i].up.xpos
+        else:
+            crossing_pairs = new_crossing_pairs
+
+
+        leaf_idx = [i for i, n in enumerate(nodes) if type(n) is Leaf]
+
+        if type(lineages[i].down) is Leaf and type(lineages[j].down) is not Leaf:
+            # try to find new position for leaf i
+
+            for k in leaf_idx:
+                # swap
+                lineages[i].down.xpos, lineages[k].down.xpos = lineages[k].down.xpos, lineages[i].down.xpos
+
+                new_crossing_pairs = get_all_crossing_pairs(lineages)
+                if not len(new_crossing_pairs) < len(crossing_pairs):
+                    # swap back
+                    lineages[i].down.xpos, lineages[k].down.xpos = lineages[k].down.xpos, lineages[i].down.xpos
+                else:
+                    break
+
+
+        if type(lineages[i].down) is Leaf and type(lineages[j].down) is not Leaf:
+            # try to find new position for leaf j
+            for k in leaf_idx:
+                # swap
+                lineages[j].down.xpos, lineages[k].down.xpos = lineages[k].down.xpos, lineages[j].down.xpos
+
+                new_crossing_pairs = get_all_crossing_pairs(lineages)
+                if not len(new_crossing_pairs) < len(crossing_pairs):
+                    # swap back
+                    lineages[j].down.xpos, lineages[k].down.xpos = lineages[k].down.xpos, lineages[j].down.xpos
+                else:
+                    break
+
+
+    # TODO: if cross over involves an internal and an external branch, see if
+    # you can move the leaf to a new position that removes the crossover
+
+
+
+    # leaf_idx = [i for i, n in enumerate(nodes) if type(n) is Leaf]
+    # suffled_leaf_idx = leaf_idx[:]
+    # shuffle(suffled_leaf_idx)
+    # for i, j in sorted(zip(leaf_idx, suffled_leaf_idx)):
+    #     print(i, j)
+    #     nodes[i].xpos = nodes[j].xpos
+
+    # new_crossing_pairs = get_all_crossing_pairs(lineages)
+    # if not len(new_crossing_pairs) < len(crossing_pairs):
+    #     for i, j in sorted(zip(leaf_idx, suffled_leaf_idx), reverse=True):
+    #         nodes[i].xpos = nodes[j].xpos
+
+
+
+
+def branch_length(lineage):
+    return ((lineage.down.xpos - lineage.up.xpos)**2 + (lineage.down.height - lineage.up.height)**2)**0.5
+
+def reduce_total_branch_length(nodes, shift):
+    lineages = get_parent_lineages(nodes)
+    lineages = [x for x in lineages if x.up is not None]
+
+    cur_tot = sum(branch_length(l) for l in lineages)
+    for i in range(len(lineages)):
+        orig_xpos = lineages[i].up.xpos
+        lineages[i].up.xpos += shift
+        tot = sum(branch_length(l) for l in lineages)
+        if tot < cur_tot:
+            cur_tot = tot
+        else:
+            lineages[i].up.xpos = orig_xpos
+        lineages[i].up.xpos -= shift
+        tot = sum(branch_length(l) for l in lineages)
+        if tot < cur_tot:
+            cur_tot = tot
+        else:
+            lineages[i].up.xpos = orig_xpos
+
+def redistribute_leaves(nodes):
+
+    leaves = [n for n in nodes if type(n) is Leaf]
+    # min_x = min(n.xpos for n in leaves)
+    # max_x = max(n.xpos for n in leaves)
+    leaves = sorted(leaves, key=lambda x: x.xpos)
+    min_x = 0
+    max_x = 1
+    for xpos, leaf in zip(np.linspace(min_x, max_x, len(leaves)), leaves):
+        leaf.xpos = xpos
+
+####################################################
+
 def add_node_x_positions(nodes):
     """
     Adds x positions in place
@@ -294,6 +448,52 @@ def add_node_x_positions(nodes):
     nodes[-1].xpos = offset
     x_positions_traverse(nodes[-1], offset)
 
+    shift_list = [0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.02]
+
+    rescale_positions(nodes)
+
+    [reduce_crossovers(nodes) for _ in range(5)]
+
+    redistribute_leaves(nodes)
+    [reduce_crossovers(nodes) for _ in range(5)]
+    [reduce_total_branch_length(nodes, shift) for shift in shift_list]
+    rescale_positions(nodes)
+    [reduce_crossovers(nodes) for _ in range(5)]
+
+
+
+    # rescale_positions(nodes)
+
+    # shift_list = [0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.02]
+    # # shift_list = [0.5, 0.4, 0.3, 0.2]
+
+    # [reduce_crossovers(nodes) for _ in range(5)]
+
+    # # [reduce_total_branch_length(nodes, shift) for shift in shift_list]
+    # # [reduce_crossovers(nodes) for _ in range(4)]
+
+    # redistribute_leaves(nodes)
+
+    # [reduce_crossovers(nodes) for _ in range(5)]
+
+    # # [reduce_total_branch_length(nodes, shift) for shift in shift_list]
+
+    # [reduce_total_branch_length(nodes, shift) for shift in shift_list]
+
+    # # [reduce_crossovers(nodes) for _ in range(5)]
+
+    # # redistribute_leaves(nodes)
+    # # [reduce_crossovers(nodes) for _ in range(5)]
+    # # redistribute_leaves(nodes)
+    # # [reduce_crossovers(nodes) for _ in range(5)]
+
+
+    # rescale_positions(nodes)
+
+
+
+#    print('====')
+
 def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
     """
     Simulates an ARG
@@ -301,7 +501,7 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
     # because we use the sequence interval from 0 to 1
     r = r * L
 
-    print('SIM:')
+#    print('\nSIM:')
 
 
     assert simulation in ["arg", "smcprime", "smc"]
@@ -336,26 +536,13 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
                 # intervals must overlap or be adjacent:
                 while not (interval_intersect(live[a].intervals, live[b].intervals) \
                     or interval_any_shared_borders(live[a].intervals, live[b].intervals)):
-                    a, b = choices(range(len(live)), k=2)
+                    shuffle(live)
             elif simulation == "smc":
                 # intervals must overlap:
                 while not interval_intersect(live[a].intervals, live[b].intervals):
-                    print('skipped', a, b)
-                    a, b = choices(range(len(live)), k=2)
-                print('used', a, b, interval_intersect(live[a].intervals, live[b].intervals))
-
-#                print('smc', a, b, sum(e-s for s, e in interval_intersect(live[a].intervals, live[b].intervals)))
-
-            # elif simulation == "SMC":
-            #     # intervals must overlap
-            #     while not interval_intersect(live[a].intervals, live[b].intervals):
-            #         a, b = choices(range(len(live)), k=2)
-
-            #     # if the two that coalesce makes a diamond, then we need to roll back
-            #     # recombination
-
-
-            lin_a, lin_b = live.pop(), live.pop()
+                    shuffle(live)
+    
+            lin_a, lin_b = live.pop(0), live.pop(0)
 
             intervals = interval_union(lin_a.intervals, lin_b.intervals)
 
@@ -376,6 +563,7 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
             node_c.parent = lin_c
         else:
             # recombination
+
             # rec_lin = choices(live, weights=[interval_sum(x.intervals) for x in live], k=1)[0]
             rec_lin = choices(live, weights=[interval_span(x.intervals) for x in live], k=1)[0]
             live.remove(rec_lin)
@@ -402,7 +590,8 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
 
             # two new lineages both refering back to recombination node
             intervals_a, intervals_b = interval_split(rec_lin.intervals, recomb_point)
-            assert interval_sum(intervals_a) and interval_sum(intervals_b) 
+            assert interval_sum(intervals_a) and interval_sum(intervals_b)
+            assert sum(e-s for s, e in intervals_a) + sum(e-s for s, e in intervals_b) == sum(e-s for s, e in rec_lin.intervals)
             lin_a = Lineage(lineageid=last_lineage+1, down=rec_node, intervals=intervals_a)
             last_lineage += 1
             lin_b = Lineage(lineageid=last_lineage+1, down=rec_node, intervals=intervals_b)
@@ -610,42 +799,42 @@ def marginal_trees(nodes, interval, strip_dangling_root=False):
             interval_list.append(interv)
     return tree_list, interval_list
 
-def draw_graph(nodes):
-    """
-    Draws graph using matplotlib
-    """    
-    # make a graph and positions list
-    positions = list()
-    arg = nx.Graph()
-    for node in nodes:
-        arg.add_node(node.nodeid)
-        positions.append((node.xpos, node.height))
-        if isinstance(node, Recombination):
-            arg.add_edge(node.child.down.nodeid, node.nodeid)
-        elif isinstance(node, Coalescent):
-            for child in node.children:
-                arg.add_edge(child.down.nodeid, node.nodeid)
+# def draw_graph(nodes):
+#     """
+#     Draws graph using matplotlib
+#     """    
+#     # make a graph and positions list
+#     positions = list()
+#     arg = nx.Graph()
+#     for node in nodes:
+#         arg.add_node(node.nodeid)
+#         positions.append((node.xpos, node.height))
+#         if isinstance(node, Recombination):
+#             arg.add_edge(node.child.down.nodeid, node.nodeid)
+#         elif isinstance(node, Coalescent):
+#             for child in node.children:
+#                 arg.add_edge(child.down.nodeid, node.nodeid)
 
-    positions = np.array(positions)
-    positions = dict(zip(arg.nodes(), positions))
+#     positions = np.array(positions)
+#     positions = dict(zip(arg.nodes(), positions))
 
-    #pos = nx.spring_layout(arg)
-    nx.draw(arg, positions, alpha=0.5, node_size=200, with_labels=True)
-    #with_labels=True, 
-    #connectionstyle='arc3, rad = 0.1', 
-    #arrowstyle='-')
+#     #pos = nx.spring_layout(arg)
+#     nx.draw(arg, positions, alpha=0.5, node_size=200, with_labels=True)
+#     #with_labels=True, 
+#     #connectionstyle='arc3, rad = 0.1', 
+#     #arrowstyle='-')
 
-    # G = nx.DiGraph() #or G = nx.MultiDiGraph()
-    # G.add_node('A')
-    # G.add_node('B')
-    # G.add_edge('A', 'B', length = 2)
-    # G.add_edge('B', 'A', length = 3)
-    # pos = nx.spring_layout(G)
-    # nx.draw(G, pos, with_labels=True, connectionstyle='arc3, rad = 0.1')
-    # edge_labels=dict([((u,v,),d['length'])
-    #              for u,v,d in G.edges(data=True)])
+#     # G = nx.DiGraph() #or G = nx.MultiDiGraph()
+#     # G.add_node('A')
+#     # G.add_node('B')
+#     # G.add_edge('A', 'B', length = 2)
+#     # G.add_edge('B', 'A', length = 3)
+#     # pos = nx.spring_layout(G)
+#     # nx.draw(G, pos, with_labels=True, connectionstyle='arc3, rad = 0.1')
+#     # edge_labels=dict([((u,v,),d['length'])
+#     #              for u,v,d in G.edges(data=True)])
 
-    plt.show()
+#     plt.show()
 
 def rescale_positions(nodes):
     """

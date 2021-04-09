@@ -76,79 +76,8 @@ def get_continuous_color(colorscale, intermed):
         intermed=((intermed - low_cutoff) / (high_cutoff - low_cutoff)),
         colortype="rgb")
 
-
-# G = nx.random_geometric_graph(20, 0.125)
-
-# edge_x = []
-# edge_y = []
-# for edge in G.edges():
-#     x0, y0 = G.nodes[edge[0]]['pos']
-#     x1, y1 = G.nodes[edge[1]]['pos']
-#     edge_x.append(x0)
-#     edge_x.append(x1)
-#     edge_x.append(None)
-#     edge_y.append(y0)
-#     edge_y.append(y1)
-#     edge_y.append(None)
-
-
-# node_x = []
-# node_y = []
-# for node in G.nodes():
-#     x, y = G.nodes[node]['pos']
-#     node_x.append(x)
-#     node_y.append(y)
-
-
-# node_adjacencies = []
-# node_text = []
-# for node, adjacencies in enumerate(G.adjacency()):
-#     node_adjacencies.append(len(adjacencies[1]))
-#     node_text.append('# of connections: '+str(len(adjacencies[1])))
-
-# # node_trace.marker.color = node_adjacencies
-# # node_trace.text = node_text
-
-###########################################
-
-
 layout = html.Div(
     [
-        # dbc.Row(
-        #     [
-        #         dbc.Col(
-        #             [
-        #                 dbc.Container(
-        #                     [
-        #                         html.H3("Ancestral recombination graph"),
-        #                     ], fluid=True, style={'padding-left': 20,
-        #                                         'padding-top': 10,
-        #                                         'padding-bottom': 0,
-        #                                         }               
-        #                 ),
-        #             ], width=8
-        #         ),
-        #         dbc.Col(
-        #             [
-        #                 dbc.Container(
-        #                     [
-        #                     dcc.Link(
-        #                        html.H3("Dashboards"),
-        #                        href='/',
-        #                        style={'color': 'lightgrey'}
-        #                     ),
-        #                     ], fluid=True, style={'text-align': 'right',
-        #                                         'padding-right': 40,
-        #                                         'padding-top': 10,
-        #                                         'padding-bottom': 0,
-        #                                         'color': 'lightgrey',
-        #                                         }               
-        #                 ),
-        #             ], width=4
-        #         )
-        #     ], justify='center', no_gutters=True,
-        # ),
-
         # Hidden div inside the app that stores the intermediate value
         html.Div(id='intermediate-value', style={'display': 'none'}),
 
@@ -241,21 +170,9 @@ layout = html.Div(
                                                         # Nodes are colored by amount of ancestral sequence.
                                                         # """), ),                    
                                                     ], width=3
-                                                ),                                                                                                                                                    
-                                                # dbc.Col(
-                                                #     [ 
-                                                #         dcc.Loading(
-                                                #             id="loading-1",
-                                                #             type="default",
-                                                #             children=html.Div(id="arg-figure"),
-                                                #         ),  
-                                                #     ], width=1
-                                                # )
-                                                    
-                                            ], justify="between", align="end", #no_gutters=True, 
+                                                ),                                                                                                                                                                                                        
+                                            ], justify="between", align="end", style={'padding': 3} #no_gutters=True, 
                                         ),
-
-
                                         dcc.Graph(id='arg-figure',
                                                 clear_on_unhover=True,
                                                 figure={'layout': {
@@ -264,9 +181,6 @@ layout = html.Div(
                                                                 }
                                                             },
                                                     ),
-
-  
-
                                     ], className='pretty_container', fluid=True,
                                 ),
                             ], style={'padding': 20}
@@ -585,7 +499,7 @@ def update_header(n_clicks):
 def new_data(n_clicks, sim, samples, length):
 
     nodes = arg.get_arg_nodes(L=length, n=samples, simulation=sim)
-    rescale_positions(nodes)
+#    rescale_positions(nodes)
     json_str = arg.arg2json(nodes)
     return json_str
 
@@ -723,7 +637,7 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
                 new_nodes = list(new_nodes)
                 new_nodes.sort(key=lambda x: x.height)
                 marg_trees, marg_segm = marginal_trees(new_nodes, interval)
-                print(marg_trees, marg_segm)
+#                 print(marg_trees, marg_segm)
                 marg_tree_list.extend(marg_trees)
                 segments.extend(marg_segm)
             return segments
