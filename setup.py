@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='popgen_dashboards',
-    version="1.0.2",
+    version="1.0.3",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
@@ -20,10 +20,10 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
     install_requires=[
-            'numpy>=1.1',
-            'dash',
-            'dash-core-components',
-            'dash-html-components',
-            'dash-bootstrap-components',
-            'matplotlib>=3.0'
+        'jupyterlab',
+        'jupyter-dash',
+        'dash',
+        'dash_bootstrap_components',
+        'pandas',
+        'networkx'
     ])

@@ -5,8 +5,8 @@ import json
 from textwrap import dedent as d
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 from dash.dependencies import Input, Output, State
 
 import dash_bootstrap_components as dbc
@@ -177,7 +177,7 @@ layout = html.Div(
                                                         # """), ),                    
                                                     ], width=3
                                                 ),                                                                                                                                                                                                        
-                                            ], justify="between", align="end", style={'padding': 3} #no_gutters=True, 
+                                            ], justify="between", align="end", style={'padding': 3} 
                                         ),
                                         dcc.Graph(id='arg-figure',
                                                 clear_on_unhover=True,
@@ -233,7 +233,8 @@ layout = html.Div(
                         ),            
                     ], width=4, 
                 ),        
-            ], no_gutters=True
+            ], 
+            className="g-0"
         ),
 
         dbc.Row(
@@ -301,7 +302,8 @@ layout = html.Div(
                         ),
                     ], width=6, align='start',
                 ),
-            ], no_gutters=True, 
+            ],
+            className="g-0"
         ),
     ], style={'padding': 20}
 )
@@ -538,6 +540,8 @@ def update_seq_slider(jsonified_data):
         nodes = []
     breakpoints = get_breakpoints(nodes)
     marks = dict((b*1000, str(i+1)) for i, b in enumerate(breakpoints))
+    if not marks:
+        marks = None
     return 0, 1000, [0, 1000], marks
 
 

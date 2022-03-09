@@ -17,7 +17,7 @@ from functools import reduce
 from numpy.random import exponential, sample
 import numpy as np
 from time import sleep
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from collections import defaultdict
 
 
