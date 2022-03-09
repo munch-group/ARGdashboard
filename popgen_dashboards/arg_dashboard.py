@@ -1,3 +1,4 @@
+from ast import Import
 import plotly.graph_objects as go
 
 import json
@@ -16,7 +17,12 @@ import dash_bootstrap_components as dbc
 # external_stylesheets = [dbc.themes.GRID]
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-from jupyter_dash import JupyterDash
+try:
+    from jupyter_dash import JupyterDash
+except ImportError:
+    print('jupyter_dash required: install using "conda install -c plotly conda install -c plotly jupyter-dash"')
+    sys.exit()
+    
 app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
