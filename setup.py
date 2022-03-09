@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='popgen_dashboards',
-    version="1.0.4",
+    version="1.0.5",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
@@ -23,7 +23,7 @@ setuptools.setup(
         'jupyterlab',
         'jupyter-dash',
         'dash',
-        'dash_bootstrap_components',
+        'dash-bootstrap-components',
         'pandas',
         'networkx'
     ])

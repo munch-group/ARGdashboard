@@ -1,6 +1,6 @@
 jupyterlab
 jupyter-dash
 dash
-dash_bootstrap_components
+dash-bootstrap-components
 pandas
 networkx
