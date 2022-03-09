@@ -20,5 +20,11 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
     install_requires=[
-        #   'numpy>=1.1',
+            'numpy>=1.1',
+            'dash',
+            'dash_core_components',
+            'dash_html_components'
+            'dash_bootstrap_components'
+            'jupyter_dash',
+            'matplotlib>=3.0'
     ])
