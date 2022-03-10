@@ -9,8 +9,8 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 # SEARCH/REPLACE package_name WITH THE ACTUAL PACKAGE NAME BELOW:
 
 setuptools.setup(
-    name='popgen_dashboards',
-    version="1.0.6",
+    name='popgen-dashboards',
+    version="1.0.7",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
