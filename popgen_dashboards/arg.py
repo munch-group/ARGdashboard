@@ -547,8 +547,14 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
             intervals = interval_union(lin_a.intervals, lin_b.intervals)
 
             # new node
+            if lin_a.down is lin_b.down:
+                # make sure diamond is symmetric
+                children=[lin_a.down.left_parent, lin_b.down.right_parent]
+            else:
+                children=[lin_a, lin_b]  
             node_c = Coalescent(nodeid=last_node+1, height=height, 
-                        children=[lin_a, lin_b])
+                        children=children)
+            
             last_node += 1
             nodes.append(node_c)
 
