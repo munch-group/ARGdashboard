@@ -11,6 +11,8 @@ from dash.dependencies import Input, Output, State
 
 import dash_bootstrap_components as dbc
 
+import math
+
 #from app import app
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -309,23 +311,88 @@ layout = html.Div(
 )
 
 
+def get_bezier_points(x1, y1, x2, y2, offset=1, absolute=True):
+    mid_x = x1 + (x2 - x1) / 2
+    mid_y = y1 + (y2 - y1) / 2
+    length = math.sqrt((x2-x1)**2 + (y2-y1)**2)
+    if absolute:
+        hyp = offset
+    else:
+        hyp = length / offset 
+        
+    if y2 == y1:
+        b11, b12 = mid_x, mid_y + hyp
+        b21, b22 = mid_x, mid_y - hyp    
+    elif x2 == x1:
+        b11, b12 = mid_x + hyp, mid_y
+        b21, b22 = mid_x - hyp, mid_y
+    else:
+        slope = (y2-y1) / (x2-x1)
+        if slope < 0:
+            angle_in_radians = math.atan(1/slope)
+        else:
+            angle_in_radians = math.atan(slope)   
+        kat = math.sin(angle_in_radians) * hyp
+        b11, b12 = mid_x + kat*slope, mid_y + kat/slope
+        b21, b22 = mid_x - kat*slope, mid_y - kat/slope
+    
+    return b11, b12, b21, b22
+
+
 def arg_figure_data(nodes):
 
     traces = []
 
     edge_x = []
-    edge_y = [] 
+    edge_y = []
+    
+    diamond_shapes = []
+    
     # for lineage in get_parent_lineages(nodes, root=False):
     for lineage in get_child_lineages(nodes):
-        # start
-        edge_x.append(lineage.down.xpos)
-        edge_y.append(lineage.down.height)
-        # end
-        edge_x.append(lineage.up.xpos)
-        edge_y.append(lineage.up.height)
-        # gap
-        edge_x.append(None)
-        edge_y.append(None)
+        
+        if type(lineage.down) is Recombination and \
+            type(lineage.up) is Coalescent and \
+            set(lineage.up.children) == set([lineage.down.right_parent, lineage.down.left_parent]):
+
+            # diamond recombination:
+            x1 = lineage.down.xpos
+            y1 = lineage.down.height
+
+            x2 = lineage.up.xpos
+            y2 = lineage.up.height
+            
+            b11, b12, b21, b22 = get_bezier_points(x1, y1, x2, y2, offset=0.02)
+
+            diamond_shapes.append(
+                dict(
+                    type="path",
+                    path=f"M {x1},{y1} Q {b11},{b12} {x2},{y2}",
+                    # line_color="lightgray",
+                    layer='below',
+                    line= {'width': 2, 'color': 'gray'}
+                )
+            )
+            diamond_shapes.append(
+                dict(
+                    type="path",
+                    path=f"M {x1},{y1} Q {b21},{b22} {x2},{y2}",
+                    # line_color="lightgray",
+                    layer='below',
+                    line= {'width': 2, 'color': 'gray'},
+                )
+            )            
+
+        else:        
+            # start
+            edge_x.append(lineage.down.xpos)
+            edge_y.append(lineage.down.height)
+            # end
+            edge_x.append(lineage.up.xpos)
+            edge_y.append(lineage.up.height)
+            # gap
+            edge_x.append(None)
+            edge_y.append(None)
 
     traces.append(dict(
         x=edge_x,
@@ -401,7 +468,8 @@ def arg_figure_data(nodes):
                             range_color=[0,1],
                             margin= {'l': 50, 'b': 20, 't': 20, 'r': 20},
                             transition = {'duration': 0},
-                            showlegend=False
+                            showlegend=False,
+                            shapes=diamond_shapes,
                             )
                 )
 
@@ -480,7 +548,7 @@ def tree_figure_data(node_lists):
                             range_color=[0,1],
                             margin= {'l': 50, 'b': 20, 't': 20, 'r': 20},
                             transition = {'duration': 0},
-                            showlegend=False
+                            showlegend=False,
                             )
                 )
 
