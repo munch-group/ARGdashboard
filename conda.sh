@@ -6,7 +6,11 @@ conda config --set anaconda_upload yes
 
 platform=`uname`
 if [ $platform == 'Darwin' ] ; then
-    plat='osx-64'
+    if [`uname -m` == 'arm64'] ; then
+        plat='osx-arm64'
+    else
+        plat='osx-64'
+    fi
 else
     plat='linux-64'
 fi
@@ -21,6 +25,8 @@ conda skeleton pypi --output-dir conda $name
 for pythonversion in 3.6 3.7 3.8; do
     conda-build --python $pythonversion conda/$name $@
 done
+
+mkdir -p outputdir
 
 # upload osx versions and convert to other architectures (assuming python only)
 for path in `find $CONDA_PREFIX/conda-bld/$plat/ -name "$name-[0-9]*.bz2"`; do
