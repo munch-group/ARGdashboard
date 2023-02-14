@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.INFO)
+
 from ast import Import
 import plotly.graph_objects as go
 
@@ -12,6 +15,9 @@ from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
 import math
+import sys
+
+import logging
 
 #from app import app
 

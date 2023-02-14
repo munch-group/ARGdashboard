@@ -1,7 +1,16 @@
 
+import sys
 from math import exp, log
 #import networkx.algorithms.non_randomness
 
+import sys
+import logging
+
+log = logging.getLogger('arg_dashboard.arg')
+# handler = logging.StreamHandler(sys.stderr)
+# handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+# log.addHandler(handler)
+log.setLevel(logging.INFO)
 import json
 
 import random
@@ -259,6 +268,7 @@ def interval_split(intervals, pos):
     return left, right
 
 def interval_any_shared_borders(a, b):
+    log.info('shared borders')
     flat = flatten(a) + flatten(b)
     return len(flat) > len(set(flat))
 
@@ -328,7 +338,6 @@ def get_all_crossing_pairs(lineages):
     return crossing_pairs
 
 def reduce_crossovers(nodes):
-
     lineages = get_parent_lineages(nodes)
     lineages = [x for x in lineages if x.up is not None]
     crossing_pairs = get_all_crossing_pairs(lineages)
@@ -532,10 +541,10 @@ def get_arg_nodes(n=5, N=10000, r=1e-8, L=5e3, simulation="arg"):
             # if full arg:            
             a, b = 0, 1
 
-            if simulation == "smcprime'":
+            if simulation == "smcprime":
                 # intervals must overlap or be adjacent:
-                while not (interval_intersect(live[a].intervals, live[b].intervals) \
-                    or interval_any_shared_borders(live[a].intervals, live[b].intervals)):
+                while not (interval_any_shared_borders(live[a].intervals, live[b].intervals) or \
+                    interval_intersect(live[a].intervals, live[b].intervals)):
                     shuffle(live)
             elif simulation == "smc":
                 # intervals must overlap:
