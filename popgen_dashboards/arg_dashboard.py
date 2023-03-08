@@ -44,8 +44,8 @@ import json
 import pandas as pd
 import networkx as nx
 
-import arg
-from arg import Coalescent, Recombination, Leaf, interval_sum, interval_diff, interval_intersect, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg, traverse_marginal, marginal_trees
+import .arg
+from .arg import Coalescent, Recombination, Leaf, interval_sum, interval_diff, interval_intersect, get_breakpoints, get_child_lineages, rescale_positions, marginal_arg, traverse_marginal, marginal_trees
 
 import plotly.colors
 
