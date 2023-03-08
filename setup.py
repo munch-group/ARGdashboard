@@ -10,13 +10,14 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='popgen-dashboards',
-    version="1.0.9",
+    version="1.0.10",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/kaspermunch/popgen_dashboards',
+    include_package_data=True,  
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
     install_requires=[
