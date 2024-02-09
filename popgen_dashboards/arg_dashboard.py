@@ -31,8 +31,8 @@ except ImportError:
     print('jupyter_dash required: install using "conda install -c plotly conda install -c plotly jupyter-dash"')
     sys.exit()
     
-app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
-# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 app.config.suppress_callback_exceptions = True
@@ -844,4 +844,5 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 app.layout = layout
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    # app.run_server(debug=True)
+    app.run(jupyter_mode="jupyterlab", debug=True)    
