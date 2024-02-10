@@ -838,9 +838,18 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 app.layout = layout
 
 def run():
-    import webbrowser
-    webbrowser.open('http://127.0.0.1:8050/')
-    app.run()
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+    # parse command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Run ARG dashboard')
+    parser.add_argument('--ip', default='127.0.0.1', help='Host address')
+    parser.add_argument('--port', type=int, default=8050, help='Port number')
+    parser.add_argument('--debug', action='store_true', help='Run in debug mode')
+    args = parser.parse_args()
+
+    import webbrowser
+    webbrowser.open(f'http://{args.ip}:{args.port}/')
+    app.run(port=args.port, debug=args.debug)
+
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
