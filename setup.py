@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='popgen-dashboards',
-    version="1.1.0",
+    version="1.1.1",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",
@@ -20,6 +20,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={"popgen_dashboards": ["assets/*.css"]},
     python_requires='>=3.6',
+    entry_points = { 'console_scripts': [ 'arg-dashboard = popgen_dashboards.arg_dashboard:run', ] },    
     install_requires=[
         'jupyterlab',
         'dash',
@@ -27,3 +28,4 @@ setuptools.setup(
         'pandas',
         'networkx'
     ])
+

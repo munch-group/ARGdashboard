@@ -25,12 +25,6 @@ import logging
 # external_stylesheets = [dbc.themes.GRID]
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-try:
-    from jupyter_dash import JupyterDash
-except ImportError:
-    print('jupyter_dash required: install using "conda install -c plotly conda install -c plotly jupyter-dash"')
-    sys.exit()
-    
 # app = JupyterDash(__name__, external_stylesheets=external_stylesheets)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
@@ -190,7 +184,7 @@ layout = html.Div(
                                         dcc.Graph(id='arg-figure',
                                                 clear_on_unhover=True,
                                                 figure={'layout': {
-                                                            'height': 570,
+                                                            'height': 565,
                                                             # 'margin': {'l': 0, 'b': 0, 't': 0, 'r': 0},
                                                                 }
                                                             },
@@ -842,6 +836,11 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 
 
 app.layout = layout
+
+def run():
+    import webbrowser
+    webbrowser.open('http://127.0.0.1:8050/')
+    app.run()
 
 if __name__ == '__main__':
     app.run_server(debug=True)
