@@ -844,5 +844,4 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 app.layout = layout
 
 if __name__ == '__main__':
-    # app.run_server(debug=True)
-    app.run(jupyter_mode="jupyterlab", debug=True)    
+    app.run_server(debug=True)

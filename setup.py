@@ -22,7 +22,6 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=[
         'jupyterlab',
-        'jupyter-dash',
         'dash',
         'dash-bootstrap-components',
         'pandas',
