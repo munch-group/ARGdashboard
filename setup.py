@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='popgen-dashboards',
-    version="1.1.4",
+    version="1.1.5",
     author="Kasper Munch",
     author_email="kaspermunch@birc.au.dk",
     description="Short description",

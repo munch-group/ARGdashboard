@@ -484,6 +484,8 @@ def tree_figure_data(node_lists):
     node_y = []    
     node_color = []
 
+    max_x = -1
+
     for i, nodes in enumerate(node_lists):
 
         # for lineage in get_parent_lineages(nodes, root=False):
@@ -503,6 +505,10 @@ def tree_figure_data(node_lists):
             node_y.append(node.height)
 
             node_color.append(i/len(node_lists))
+
+            max_x = max(max_x, node.xpos)
+
+
 
     traces.append(dict(
         x=edge_x,
@@ -535,18 +541,20 @@ def tree_figure_data(node_lists):
 
     return dict(data=traces,
                 layout=dict(xaxis=dict(fixedrange=True, 
-                                       range=[-0.05, 1.05], #title='Samples',
+                                       range=[-0.02, max_x + 0.02], #title='Samples',
                                        showgrid=False, showline=False, 
                                        zeroline=False, showticklabels=False
                                        ),
                             yaxis=dict(fixedrange=True, 
-                                       range=[-0.1, 1.1], #title='Time',
+                                    #    range=[-0.1, 1.1], #title='Time',
+                                       range=[-0.02, 1.02], #title='Time',
                                        showgrid=False, showline=False, 
                                        zeroline=False, showticklabels=False
                                        ),
                             hovermode='closest',
                             range_color=[0,1],
-                            margin= {'l': 50, 'b': 20, 't': 20, 'r': 20},
+                            margin= {'l': 7, 'b': 10, 't': 10, 'r': 4},
+                            # margin= {'l': 0, 'b': 0, 't': 0, 'r': 0},
                             transition = {'duration': 0},
                             showlegend=False,
                             )
