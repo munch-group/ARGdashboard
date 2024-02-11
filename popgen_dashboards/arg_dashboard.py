@@ -842,14 +842,14 @@ def run():
     # parse command line arguments
     import argparse
     parser = argparse.ArgumentParser(description='Run ARG dashboard')
-    parser.add_argument('--ip', default='127.0.0.1', help='Host address')
+    parser.add_argument('--host', '--ip', default='127.0.0.1', help='Host address')
     parser.add_argument('--port', type=int, default=8050, help='Port number')
     parser.add_argument('--debug', action='store_true', help='Run in debug mode')
     args = parser.parse_args()
 
     import webbrowser
-    webbrowser.open(f'http://{args.ip}:{args.port}/')
-    app.run(port=args.port, debug=args.debug)
+    webbrowser.open(f'http://{args.host}:{args.port}/')
+    app.run(host=args.host, port=args.port, debug=args.debug)
 
 # if __name__ == '__main__':
 #     app.run_server(debug=True)
