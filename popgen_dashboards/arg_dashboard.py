@@ -730,7 +730,7 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
 
         def get_shapes(segments, gray_segments, x, y, color_map):
             shape_list = list()
-            shape = dict(type='rect', xref='x', yref='y', fillcolor=None, line= {'width': 1},
+            shape = dict(type='rect', xref='x', yref='y', fillcolor='white', line= {'width': 1},
                         x0=x, y0=y, x1=x+2/5, y1=y+0.1)
             shape_list.append(shape)                
             for i, segment in enumerate(segments):
@@ -776,15 +776,45 @@ def update_ancestral_seq_figure(jsonified_data, hover, slider_interval):
                 color_map[s] = get_continuous_color(colorscale, intermed=i/len(unique_segments))
 
             shape_list = \
+                   [dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                            x0=0.5, y0=0.55, x1=0.5, y1=0.1),
+                    dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                            x0=0.5, y0=0.55, x1=0.05, y1=0.95),                            
+                            # x0=0.5, y0=0.55, x1=1/5, y1=0.75),                            
+                    dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                            x0=0.5, y0=0.55, x1=0.95, y1=0.95),
+                    dict(type="circle", xref="x", yref="y",
+                        fillcolor="black",
+                         x0=0.488, y0=0.5285, x1=0.512, y1=0.5715,
+                        line_color="black")                            
+                            ] + \
                 get_shapes(segments1, gray_segments, x=0, y=0.75, color_map=color_map) + \
                 get_shapes(segments2, gray_segments, x=3/5, y=0.75, color_map=color_map) + \
-                get_shapes(segments3, gray_segments, x=1.5/5, y=0.25, color_map=color_map) + \
-                   [dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
-                            x0=0.5, y0=0.55, x1=0.5, y1=0.35),
-                    dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
-                            x0=0.5, y0=0.55, x1=1/5, y1=0.75),                            
-                    dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
-                            x0=0.5, y0=0.55, x1=4/5, y1=0.75)]
+                get_shapes(segments3, gray_segments, x=1.5/5, y=0.25, color_map=color_map)
+
+            # traces.append(dict(
+            #     x=[0.5, 0.5],
+            #     y=[0.55, 0.55],
+            #     mode='markers',
+            #     # opacity=1,
+            #     marker={
+            #         'size': 7,
+            #         'color': 'black',},
+            #     name=''
+            # ))
+
+
+                # get_shapes(segments1, gray_segments, x=0, y=0.75, color_map=color_map) + \
+                # get_shapes(segments2, gray_segments, x=3/5, y=0.75, color_map=color_map) + \
+                # get_shapes(segments3, gray_segments, x=1.5/5, y=0.25, color_map=color_map) + \
+                #    [dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                #             x0=0.5, y0=0.55, x1=0.5, y1=0.35),
+                #     dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                #             x0=0.5, y0=0.55, x1=0, y1=1),                            
+                #             # x0=0.5, y0=0.55, x1=1/5, y1=0.75),                            
+                #     dict(type='line', xref='x', yref='y', line= {'width': 2, 'color': 'gray'},
+                #             x0=0.5, y0=0.55, x1=4/5, y1=0.75)]
+
 
             # print("slider", slider_interval)
             # shape_list.append(dict(type='rect', xref='x', yref='y', fillcolor='grey', line= {'width': 1},

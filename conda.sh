@@ -1,4 +1,6 @@
 
+rm -rf conda
+
 # clean slate
 conda-build purge-all
 
